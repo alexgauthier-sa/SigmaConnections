@@ -21,6 +21,78 @@ All other fields from the supplied payload are preserved.
 - `connection-writeback/update-connection-writeback.ipynb` — notebook version of the workflow.
 - `connection-writeback/connection.json.example` — example Databricks OAuth payload.
 
+## Use the Databricks notebook
+
+The notebook is intended to run inside a Databricks workspace and update the first writeback location for a Sigma Databricks OAuth connection.
+
+### 1. Import and attach the notebook
+
+Import `connection-writeback/update-connection-writeback.ipynb` into your Databricks workspace and attach it to running compute with network access to the Sigma API. The notebook uses `dbutils`, so it is not designed to run as a local Jupyter notebook without modification.
+
+The compute environment must have the `requests` Python package. It is normally available in Databricks runtimes; if it is missing, install it on the compute before continuing.
+
+### 2. Store credentials in a Databricks secret scope
+
+Create or use a Databricks secret scope and add these four secrets:
+
+| Default secret key | Value |
+| --- | --- |
+| `sigma_client_id` | Sigma API client ID |
+| `sigma_client_secret` | Sigma API client secret |
+| `databricks_oauth_client_id` | OAuth client ID used by the Sigma connection to access Databricks |
+| `databricks_oauth_client_secret` | OAuth client secret used by the Sigma connection to access Databricks |
+
+The default scope name is `sigma`. You can use a different scope or different key names by changing the corresponding notebook widgets.
+
+The Sigma API client must be able to list and update connections. The Databricks OAuth credentials must have the access required by the existing connection and its writeback destination.
+
+### 3. Complete `CONNECTION_PAYLOAD`
+
+In the **Existing connection payload** cell, replace the placeholders with the existing connection's values:
+
+- `YOUR_DATABRICKS_HOST`
+- `YOUR_SQL_WAREHOUSE_ID`
+- `YOUR_DATABRICKS_OIDC_METADATA_URL`
+- `CURRENT_CATALOG`
+- `CURRENT_SCHEMA`
+
+Keep every other property required by the existing Sigma connection. The notebook submits this object with `PUT`, so omitted connection properties may not be preserved. The connection name is populated from the `connection_name` widget, and the four credentials are loaded from the configured secret scope.
+
+### 4. Set the notebook widgets
+
+Run the widget cell, then provide values at the top of the notebook:
+
+| Widget | Required value |
+| --- | --- |
+| `connection_name` | Exact name of one active Sigma connection |
+| `catalog` | New Databricks writeback catalog |
+| `schema` | New Databricks writeback schema |
+| `secret_scope` | Scope containing all four secrets; defaults to `sigma` |
+| `client_id_secret_key` | Sigma client ID key; defaults to `sigma_client_id` |
+| `client_secret_secret_key` | Sigma client secret key; defaults to `sigma_client_secret` |
+| `databricks_oauth_client_id_secret_key` | Databricks OAuth client ID key |
+| `databricks_oauth_client_secret_secret_key` | Databricks OAuth client secret key |
+| `sigma_base_url` | Sigma API host; defaults to the AWS Sigma API |
+| `dry_run` | Keep this set to `true` for the first run |
+
+### 5. Run and review the dry run
+
+Run all cells with `dry_run` set to `true`. The final cell builds and prints the payload but does not authenticate to Sigma or update the connection. Confirm that:
+
+- The connection name is correct.
+- `writeCatalog` and `writeSchema` contain the intended destination.
+- The rest of the connection payload is complete and unchanged.
+
+The printed payload can contain sensitive connection configuration. Treat notebook output as confidential, restrict notebook permissions, and clear the output before sharing or exporting the notebook.
+
+### 6. Apply the update
+
+Change `dry_run` to `false` and rerun the notebook. It authenticates to Sigma, finds one active connection with an exact name match, and submits the updated payload. A successful run prints an `[OK]` message with the connection ID.
+
+The notebook stops without updating anything if the connection name has no exact active match or matches multiple active connections. After a successful update, verify the connection and writeback destination in Sigma before relying on it for production writes.
+
+> **Note:** The notebook updates only the first entry in `details.writebackSchemas`. Use the command-line utility with `--writeback-index` if you need to update another entry.
+
 ## Requirements
 
 - Python 3.9 or newer
