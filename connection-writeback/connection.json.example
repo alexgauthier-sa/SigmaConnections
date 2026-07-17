@@ -1,0 +1,34 @@
+{
+  "name": "YOUR_SIGMA_CONNECTION_NAME",
+  "details": {
+    "type": "databricks",
+    "host": "YOUR_DATABRICKS_HOST",
+    "endpoint": "YOUR_SQL_WAREHOUSE_ID",
+    "useOauth": true,
+    "useOrgOauth": false,
+    "oauth": {
+      "provider": "databricks",
+      "clientId": "YOUR_DATABRICKS_OAUTH_CLIENT_ID",
+      "clientSecret": {
+        "type": "plain",
+        "value": "YOUR_DATABRICKS_OAUTH_CLIENT_SECRET"
+      },
+      "redirectUri": "YOUR_SIGMA_BASE_URL/v2/oauth/1/authcode",
+      "metadataUrl": "YOUR_DATABRICKS_OIDC_METADATA_URL",
+      "scopes": [
+        "openid",
+        "profile",
+        "email",
+        "all-apis",
+        "offline_access"
+      ]
+    },
+    "writebackSchemas": [
+      {
+        "writeCatalog": "CURRENT_CATALOG",
+        "writeSchema": "CURRENT_SCHEMA"
+      }
+    ]
+  },
+  "runAsServiceAccount": false
+}
